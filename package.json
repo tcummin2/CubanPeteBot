@@ -1,0 +1,17 @@
+{
+  "name": "cuban-pete-bot",
+  "version": "1.0.0",
+  "description": "A Discord bot that plays 'Cuban Pete' in an AFK channel",
+  "main": "index.js",
+  "author": "Tyler Cummings <tyler.v.cummingsg@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "11.5.1",
+    "ffmpeg-binaries": "^4.0.0",
+    "opusscript": "^0.0.7",
+    "ytdl-core": "^2.0.0"
+  },
+  "scripts": {
+    "start": "node ."
+  }
+}
