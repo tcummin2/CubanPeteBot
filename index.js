@@ -1,39 +1,44 @@
 const Discord = require('discord.js')
-const Ytdl = require('ytdl-core')
-const config = require('./config.json')
+const { botId, token } = require('./config.json')
 
-const CUBAN_PETE_URL = 'https://www.youtube.com/watch?v=eTI8hgWJh-I'
+const FILE_PATH = './cuban-pete.mp3'
 
 const client = new Discord.Client()
 
-client.login(config.token)
+client.login(token)
   .then(() => console.log('Started'))
 
-client.on('voiceStateUpdate', (oldMember, newMember) => {
-  var newUserChannel = newMember.voiceChannel
-  var isAfkChannel = !!newUserChannel && client.guilds.some(guild => guild.afkChannelID === newUserChannel.id)
+client.on('error', console.error)
 
-  if (isAfkChannel && !newUserChannel.members.some(member => member.user.bot)) {
-    newUserChannel.join()
+client.on('voiceStateUpdate', (_, { voiceChannel }) => {
+  if (isAfkChannel(voiceChannel) && !isBotInChannel(voiceChannel)) {
+    voiceChannel.join()
       .then(connection => {
-        var bots = connection.channel.members
-          .filter(member => member.user.bot)
-        bots.forEach(member => member.setMute(false))
-        play(connection)
+        unmuteBotInAfkChannel(voiceChannel)
+        playFileIndefinitely(connection)
       })
-  }
-})
+    }
+  })
 
-function play(connection) {
-  var stream = Ytdl(CUBAN_PETE_URL, { filter: 'audioonly'})
-  connection.playStream(stream)
-    .on('end', () => {
-      if (connection.channel.members.array().length > 1) {
-        play(connection)
-      } else {
-        setTimeout(() => connection.disconnect(), 1000)
-      }
-    })
+const playFileIndefinitely = connection => {
+  var dispatcher = connection.playFile(FILE_PATH)
+  dispatcher.on('end', () => {
+    if (connection.channel.members.array().length > 1) {
+      playFileIndefinitely(connection)
+    } else {
+      setTimeout(() => connection.disconnect(), 1000)
+    }
+  })
 }
 
-client.on('error', console.error)
+const isAfkChannel = voiceChannel =>
+  !!voiceChannel && client.guilds.some(({ afkChannelID }) => afkChannelID === voiceChannel.id)
+
+const isBotInChannel = voiceChannel =>
+  !!getBotMembersInChannel(voiceChannel).array().length
+
+const getBotMembersInChannel = ({ members }) =>
+  members.filter(({ user }) => user.bot && user.id === botId)
+
+const unmuteBotInAfkChannel = voiceChannel =>
+  getBotMembersInChannel(voiceChannel).forEach(member => member.setMute(false))
