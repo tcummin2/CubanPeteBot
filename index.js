@@ -1,12 +1,13 @@
 const Discord = require('discord.js')
 const { botId, token } = require('./config.json')
 const countdown = require('countdown')
+const Database = require('./database')
 
 const FILE_PATH = './cuban-pete.mp3'
 
 const client = new Discord.Client()
+const db = new Database()
 const COUNTDOWN_UNITS = countdown.HOURS | countdown.MINUTES | countdown.SECONDS
-const afkTimes = {}
 
 client.login(token)
   .then(() => console.log('Started'))
@@ -26,8 +27,8 @@ client.on('voiceStateUpdate', (oldGuildMember, newGuildMember) => {
   }
 })
 
-const respondToAfkChannelJoin = ({ voiceChannel, user }) => {
-  afkTimes[user.id] = new Date()
+const respondToAfkChannelJoin = ({ voiceChannel, guild, user }) => {
+  db.startAfkSessionForUser({ userId: user.id, guildId: guild.id, timeEntered: new Date() })
   if (!isBotInChannel(voiceChannel)) {
     joinChannelAndPlayIndefinitely(voiceChannel)
   }
@@ -53,16 +54,15 @@ const playFileIndefinitely = connection => {
 }
 
 const sendAfkTime = ({ guild, user }) => {
-  const afkStartTime = afkTimes[user.id]
-  if (!afkStartTime) return
+  var id = db.endAfkSessionForUser({ userId: user.id, timeExited: new Date(), guildId: guild.id })
 
-  const totalAFKTime = countdown(afkStartTime, new Date(), COUNTDOWN_UNITS)
-  delete afkTimes[user.id]
+  const { timeEntered, timeExited } = db.getAfkSessionById(id)
+  const totalAFKTime = countdown(timeEntered, timeExited, COUNTDOWN_UNITS)
 
   const textChannels = guild.channels.filter(({ type }) => type === 'text')
   const generalChannel = textChannels.find(({ name }) => name.includes('general')) || textChannels.first()
 
-  generalChannel.send(`You were Cuban Pete'd for ${totalAFKTime}`, { reply: user })
+  generalChannel.send(`You were Cuban Pete'd for ${totalAFKTime.toString()}`, { reply: user })
 }
 
 const isAfkChannel = voiceChannel =>

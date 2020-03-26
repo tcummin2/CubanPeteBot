@@ -9,7 +9,9 @@
     "countdown": "^2.6.0",
     "discord.js": "11.5.1",
     "ffmpeg-binaries": "^4.0.0",
-    "opusscript": "^0.0.7"
+    "lowdb": "^1.0.0",
+    "opusscript": "^0.0.7",
+    "shortid": "^2.2.15"
   },
   "scripts": {
     "start": "node ."
