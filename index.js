@@ -59,8 +59,10 @@ const sendAfkTime = ({ guild, user }) => {
   const totalAFKTime = countdown(afkStartTime, new Date(), COUNTDOWN_UNITS)
   delete afkTimes[user.id]
 
-  guild.channels.find(({ type }) => type === 'text')
-    .send(`You were Cuban Pete'd for ${totalAFKTime}`, { reply: user })
+  const textChannels = guild.channels.filter(({ type }) => type === 'text')
+  const generalChannel = textChannels.find(({ name }) => name.includes('general')) || textChannels.first()
+
+  generalChannel.send(`You were Cuban Pete'd for ${totalAFKTime}`, { reply: user })
 }
 
 const isAfkChannel = voiceChannel =>
