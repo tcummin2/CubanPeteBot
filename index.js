@@ -14,11 +14,14 @@ client.login(token)
 client.on('error', console.error)
 
 client.on('voiceStateUpdate', (oldGuildMember, newGuildMember) => {
-  if (newGuildMember.user.bot || oldGuildMember.user.bot) return
+  const { user: oldUser, voiceChannel: oldVoiceChannel } = oldGuildMember
+  const { user: newUser, voiceChannel: newVoiceChannel } = newGuildMember
 
-  if (isAfkChannel(newGuildMember.voiceChannel)) {
+  if (newUser.bot || oldUser.bot || newVoiceChannel === oldVoiceChannel) return
+
+  if (isAfkChannel(newVoiceChannel)) {
     respondToAfkChannelJoin(newGuildMember)
-  } else if (isAfkChannel(oldGuildMember.voiceChannel) && !oldGuildMember.user.bot) {
+  } else if (isAfkChannel(oldVoiceChannel) && !oldUser.bot) {
     sendAfkTime(oldGuildMember)
   }
 })
