@@ -76,3 +76,24 @@ const getBotMembersInChannel = ({ members }) =>
 
 const unmuteBotInAfkChannel = voiceChannel =>
   getBotMembersInChannel(voiceChannel).forEach(member => member.setMute(false))
+
+client.on('message', ({ guild, content, channel }) => {
+  if (content === '!leaderboard') {
+    const NUMBER_OF_SESSIONS = 5
+
+    var afkSessions = db.getLongestAfkSessionsForGuild(guild.id, NUMBER_OF_SESSIONS)
+    var guildName = client.guilds.get(guild.id).name
+
+    var embed = {
+      color: 6875242,
+      title: `Top ${NUMBER_OF_SESSIONS} Cuban Petes for ${guildName}`,
+      // description: ,
+      fields: afkSessions.map(({ userId, totalTime }, i) => ({
+        name: `${i + 1}.`,
+        value: `<@${userId}>: ${countdown(totalTime, COUNTDOWN_UNITS).toString()}`
+      }))
+    }
+
+    channel.send({ embed })
+  }
+})

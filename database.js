@@ -46,6 +46,22 @@ class Database {
 
     return id
   }
+
+  getLongestAfkSessionsForGuild(guildId, numberOfSessions) {
+    const allSessions = this.useAfkSessionsTable()
+      .filter({ guildId })
+      .filter(session => session.timeExited)
+      .value()
+
+    allSessions.forEach(session => {
+      session.totalTime = new Date(session.timeExited) - new Date(session.timeEntered)
+    })
+
+    allSessions.sort((session1, session2) => session1.totalTime - session2.totalTime)
+    allSessions.reverse()
+
+    return allSessions.slice(0, numberOfSessions)
+  }
 }
 
 module.exports = Database
