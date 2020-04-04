@@ -7,7 +7,7 @@ const adapter = new FileSync('db.json')
 class Database {
   constructor() {
     this.db = low(adapter)
-    this.db.defaults({ afkSessions: [] })
+    this.db.defaults({ afkSessions: [], highScoreRoleByGuild: {} })
       .write()
   }
 
@@ -61,6 +61,18 @@ class Database {
     allSessions.reverse()
 
     return allSessions.slice(0, numberOfSessions)
+  }
+
+  getHighScoreRoleForGuild(guildId) {
+    var highScoreRoles = this.db.get('highScoreRoleByGuild').value()
+
+    return highScoreRoles[guildId]
+  }
+
+  setHighScoreRoleForGuild(guildId, roleId) {
+    this.db.get('highScoreRoleByGuild')
+      .assign({ [guildId]: roleId })
+      .write()
   }
 }
 

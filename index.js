@@ -63,6 +63,36 @@ const sendAfkTime = ({ guild, user }) => {
   const generalChannel = textChannels.find(({ name }) => name.includes('general')) || textChannels.first()
 
   generalChannel.send(`You were Cuban Pete'd for ${totalAFKTime.toString()}`, { reply: user })
+  assignRole(guild, generalChannel)
+}
+
+const assignRole = (guild, channel) => {
+  var [longestAfkSession] = db.getLongestAfkSessionsForGuild(guild.id, 1)
+  var roleId = db.getHighScoreRoleForGuild(guild.id)
+  if (!roleId) {
+    guild.createRole({
+      name: 'Cuban Pete World Champion',
+      hoist: true,
+      mentionable: true
+    }).then(role => {
+      db.setHighScoreRoleForGuild(guild.id, role.id)
+      var member = guild.members.find(({ id }) => id === longestAfkSession.userId)
+      member.addRole(role.id)
+      channel.send(`<@${member.id}> has been declared <@&${role.id}>!`)
+    })
+
+  } else {
+    var role = guild.roles.find(role => role.id === roleId)
+    var previousChampion = role.members.first()
+    if (previousChampion.id !== longestAfkSession.userId) {
+      previousChampion.removeRole(role.id)
+      var currentChampion = guild.members.find(({ id }) => id === longestAfkSession.userId)
+      currentChampion.addRole(role.id)
+      channel.send(`<@${currentChampion.id}> has claimed the title of <@&${role.id}> from <@${previousChampion.id}>!`)
+    } else {
+      return { championId: previousChampion.id, roleId }
+    }
+  }
 }
 
 const isAfkChannel = voiceChannel =>
@@ -82,12 +112,10 @@ client.on('message', ({ guild, content, channel }) => {
     const NUMBER_OF_SESSIONS = 5
 
     var afkSessions = db.getLongestAfkSessionsForGuild(guild.id, NUMBER_OF_SESSIONS)
-    var guildName = client.guilds.get(guild.id).name
 
     var embed = {
       color: 6875242,
-      title: `Top ${NUMBER_OF_SESSIONS} Cuban Petes for ${guildName}`,
-      // description: ,
+      title: `Top ${NUMBER_OF_SESSIONS} Cuban Petes for ${guild.name}`,
       fields: afkSessions.map(({ userId, totalTime }, i) => ({
         name: `${i + 1}.`,
         value: `<@${userId}>: ${countdown(totalTime, COUNTDOWN_UNITS).toString()}`
@@ -95,5 +123,10 @@ client.on('message', ({ guild, content, channel }) => {
     }
 
     channel.send({ embed })
+  } else if (content === '!highscore') {
+    var { championId, roleId } = assignRole(guild, channel) || {}
+    if (championId) {
+      channel.send(`<@${championId}> is the <@&${roleId}>!`)
+    }
   }
 })
