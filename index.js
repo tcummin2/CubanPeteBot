@@ -1,41 +1,36 @@
-const { Client, Intents } = require('discord.js')
+const { Client, GatewayIntentBits, ChannelType } = require('discord.js')
+const {
+  joinVoiceChannel,
+  createAudioPlayer,
+  NoSubscriberBehavior,
+  createAudioResource,
+  getVoiceConnection,
+  AudioPlayerStatus
+} = require('@discordjs/voice')
 const countdown = require('countdown')
 const Database = require('./database')
-const { joinVoiceChannel, createAudioPlayer, NoSubscriberBehavior, createAudioResource, getVoiceConnection, AudioPlayerStatus } = require('@discordjs/voice');
 const { botId, token } = require('./config.json')
 
 const FILE_PATH = './cuban-pete.mp3'
 
 const client = new Client({
   intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MEMBERS,
-    Intents.FLAGS.GUILD_BANS,
-    Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS,
-    Intents.FLAGS.GUILD_INTEGRATIONS,
-    Intents.FLAGS.GUILD_WEBHOOKS,
-    Intents.FLAGS.GUILD_INVITES,
-    Intents.FLAGS.GUILD_VOICE_STATES,
-    Intents.FLAGS.GUILD_PRESENCES,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-    Intents.FLAGS.GUILD_MESSAGE_TYPING,
-    Intents.FLAGS.DIRECT_MESSAGES,
-    Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
-    Intents.FLAGS.DIRECT_MESSAGE_TYPING,
-    Intents.FLAGS.MESSAGE_CONTENT,
-    Intents.FLAGS.GUILD_SCHEDULED_EVENTS,
-    Intents.FLAGS.AUTO_MODERATION_CONFIGURATION,
-    Intents.FLAGS.AUTO_MODERATION_EXECUTION
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
   ]
 })
 const db = new Database()
 const COUNTDOWN_UNITS = countdown.HOURS | countdown.MINUTES | countdown.SECONDS
 
 const player = createAudioPlayer({
-	behaviors: {
-		noSubscriber: NoSubscriberBehavior.Stop,
-	}
+  behaviors: {
+    noSubscriber: NoSubscriberBehavior.Stop,
+  }
 })
 // const resource = createAudioResource(FILE_PATH)
 // player.play(resource)
@@ -104,7 +99,7 @@ const sendAfkTime = async ({ guild, user }) => {
   const { timeEntered, timeExited } = db.getAfkSessionById(id)
   const totalAFKTime = countdown(timeEntered, timeExited, COUNTDOWN_UNITS)
 
-  const textChannels = guild.channels.cache.filter(({ type }) => type === 'GUILD_TEXT')
+  const textChannels = guild.channels.cache.filter(({ type }) => type === ChannelType.GuildText)
   const generalChannel = textChannels.find(({ name }) => name.includes('general')) || textChannels.first()
 
   await generalChannel.send({ content: `<@${user.id}> You were Cuban Pete'd for ${totalAFKTime.toString()}` })
